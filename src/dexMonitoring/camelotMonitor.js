@@ -1,5 +1,5 @@
 const { web3 } = require('../../layer2s/setChainARB');
-const { sendMessage, escapeMarkdownV2  } = require('../bot');
+const { sendMessage } = require('../bot');
 const { routerAddress, routerAbi } = require('../routerConfigs/camelotYakRouter'); // Adjust path as needed
 const axios = require('axios');
 
