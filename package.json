@@ -1,0 +1,19 @@
+{
+  "name": "telegrambot-for-winr",
+  "version": "1.0.0",
+  "description": "For fetching buy txns  of $WINR",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "author": "Rohit Sen",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "node-telegram-bot-api": "^0.66.0",
+    "nodemon": "^3.1.4",
+    "p-queue": "^8.0.1",
+    "web3": "^4.10.0"
+  }
+}
