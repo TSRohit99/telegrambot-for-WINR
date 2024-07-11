@@ -1,13 +1,13 @@
 const TelegramBot = require("node-telegram-bot-api");
-const fs = require("fs");
+// const fs = require("fs");
 require("dotenv").config();
 
-let chatIds = [];
-const chatIdsPath = "./chat_ids.json";
+let chatIds = [-1002162604540,-1001476355723,-4218457554,-1001381610969]; // not using any DB at the moment
+// const chatIdsPath = "./chat_ids.json";
 
-if (fs.existsSync(chatIdsPath)) {
-  chatIds = JSON.parse(fs.readFileSync(chatIdsPath));
-}
+// if (fs.existsSync(chatIdsPath)) {
+//   chatIds = JSON.parse(fs.readFileSync(chatIdsPath));
+// }
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
@@ -16,21 +16,22 @@ bot.on("message", (msg) => {
 
   if (chatId < 0) {
     // Check for group chat
-    if (chatIds.length < 100) {
-      if (!chatIds.includes(chatId)) {
-        chatIds.push(chatId);
-        try {
-          fs.writeFileSync(chatIdsPath, JSON.stringify(chatIds));
-        } catch (error) {
-          console.error("Error writing to chat_ids.json:", error);
-        }
-      }
-    } else {
+    // if (chatIds.length < 100) {
+    //   if (!chatIds.includes(chatId)) {
+    //     chatIds.push(chatId);
+    //     try {
+    //       fs.writeFileSync(chatIdsPath, JSON.stringify(chatIds));
+    //     } catch (error) {
+    //       console.error("Error writing to chat_ids.json:", error);
+    //     }
+    //   }
+    // } else {
       bot.sendMessage(
         chatId,
-        "Max Group Reached! Contact @rohit_sen to use this bot"
+        "Contact @rohit_sen to use this bot, in your group!"
       );
-    }
+
+    //}
   } else {
     bot.sendMessage(chatId, "Only available for groups for now!");
   }
