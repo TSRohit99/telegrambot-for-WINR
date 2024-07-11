@@ -3,8 +3,57 @@ const { msgTemplate } = require("../msgSender");
 const { getTokenPriceInUSD } = require("../getTokenPriceInUSD");
 const { poolAddress, poolAbi } = require("../routerConfigs/uniSwapV3Pool");
 
-const MAX_BLOCK_RANGE = 100; // Maximum number of blocks to check in one iteration
-const CHECK_INTERVAL = 2000; // Check every 2 seconds
+const MAX_BLOCK_RANGE = 100;
+const CHECK_INTERVAL = 2000;
+
+const eventQueue = [];
+
+const processQueue = async () => {
+  while (eventQueue.length > 0) {
+    const event = eventQueue.shift();
+    try {
+      const { amount0, amount1 } = event.returnValues;
+      const isBuy = BigInt(amount1) < 0;
+      const tokenAmount = isBuy ? BigInt(-amount1) : BigInt(amount0);
+      const tokenPriceInUSD = await getTokenPriceInUSD("winr-protocol");
+
+      if (!tokenPriceInUSD) {
+        console.error("Failed to fetch token price, skipping this event");
+        continue;
+      }
+
+      const amountOutWINR = parseFloat(
+        web3.utils.fromWei(tokenAmount.toString(), "ether")
+      ).toFixed(2);
+
+      const amountInUSD = parseFloat(amountOutWINR) * tokenPriceInUSD.price;
+      const mcapInUSD = tokenPriceInUSD.marketCap.toFixed(2);
+      const volume24hInUSD = tokenPriceInUSD.volume24h.toFixed(2);
+      const tx = await web3.eth.getTransaction(event.transactionHash);
+      const dex = "UniSwap";
+      const obj = {
+        dex,
+        amountOutWINR,
+        amountInUSD,
+        mcapInUSD,
+        volume24hInUSD,
+        tx,
+        event,
+        blockNumber: event.blockNumber.toString(),
+      };
+
+      if (isBuy && amountInUSD >= 500) {
+        const response = await msgTemplate(obj);
+        console.log(response);
+      }
+    } catch (error) {
+      console.error("Error processing event:", error);
+    }
+  }
+
+  // Schedule next queue processing
+  setTimeout(processQueue, 2000);
+};
 
 const uniswapMonitor = async () => {
   try {
@@ -31,42 +80,10 @@ const uniswapMonitor = async () => {
 
           console.log(`Found ${events.length} events`);
 
-          for (const event of events) {
-            const { amount0, amount1 } = event.returnValues;
-            const isBuy = BigInt(amount1) < 0;
-            const tokenAmount = isBuy ? BigInt(-amount1) : BigInt(amount0);
-            const tokenPriceInUSD = await getTokenPriceInUSD("winr-protocol");
-
-            if (!tokenPriceInUSD) {
-              console.error("Failed to fetch token price, skipping this event");
-              continue;
-            }
-
-            const amountOutWINR = parseFloat(
-              web3.utils.fromWei(tokenAmount.toString(), "ether")
-            ).toFixed(2);
-
-            const amountInUSD = parseFloat(amountOutWINR) * tokenPriceInUSD.price;
-            const mcapInUSD = tokenPriceInUSD.marketCap.toFixed(2);
-            const volume24hInUSD = tokenPriceInUSD.volume24h.toFixed(2);
-            const tx = await web3.eth.getTransaction(event.transactionHash);
-            const dex = "UniSwap";
-            const obj = {
-              dex,
-              amountOutWINR,
-              amountInUSD,
-              mcapInUSD,
-              volume24hInUSD,
-              tx,
-              event,
-              blockNumber: endBlock.toString(), // Add this for msgTemplate
-            };
-
-            if (isBuy && amountInUSD ) {
-              const response = await msgTemplate(obj);
-              console.log(response);
-            }
-          }
+          // Add events to queue instead of processing immediately
+          events.forEach(event => {
+            eventQueue.push(event);
+          });
 
           lastCheckedBlock = endBlock;
         } else {
@@ -89,6 +106,9 @@ const uniswapMonitor = async () => {
     };
 
     setInterval(runInterval, CHECK_INTERVAL);
+
+    // Start processing queue
+    processQueue();
 
   } catch (error) {
     console.error(
