@@ -21,8 +21,8 @@ bot.on("message", (msg) => {
 
 const sendMessage = (text, options = {}) => {
   chatIds.forEach((chatId) => {
-    if (chatId === -1002162604540) {
-      const topicId = 3;
+    if (chatId === -1001381610969) { // TG @WINRProtocol 
+      const topicId = 91869; //Topic -> Price_Chat
       bot.sendMessage(chatId, text, {
         message_thread_id: topicId,
         parse_mode: "HTML",
