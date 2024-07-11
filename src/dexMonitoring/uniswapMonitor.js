@@ -1,7 +1,8 @@
 const { web3 } = require("../../layer2s/setChainARB");
-const { msgTemplate } = require("../msgSender");
+const { msgTemplate,getTime } = require("../msgSender");
 const { getTokenPriceInUSD } = require("../getTokenPriceInUSD");
 const { poolAddress, poolAbi } = require("../routerConfigs/uniSwapV3Pool");
+
 
 const MAX_BLOCK_RANGE = 100;
 const CHECK_INTERVAL = 2000;
@@ -70,7 +71,7 @@ const uniswapMonitor = async () => {
           const endBlock = BigInt(Math.min(Number(lastCheckedBlock) + MAX_BLOCK_RANGE, Number(latestBlock)));
 
           console.log(
-            `Checking blocks from ${lastCheckedBlock + BigInt(1)} to ${endBlock}`
+            `UniSwap Monitor -> Checking blocks from ${lastCheckedBlock + BigInt(1)} to ${endBlock} : ${getTime()}`
           );
 
           const events = await poolContract.getPastEvents("Swap", {
@@ -78,7 +79,7 @@ const uniswapMonitor = async () => {
             toBlock: endBlock.toString(),
           });
 
-          console.log(`Found ${events.length} events`);
+          console.log(`UniSwap Monitor -> Found ${events.length} events`);
 
           // Add events to queue instead of processing immediately
           events.forEach(event => {

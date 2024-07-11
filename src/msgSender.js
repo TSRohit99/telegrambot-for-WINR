@@ -1,5 +1,17 @@
 const { sendMessage } = require("./bot");
 
+const getTime = () => {
+  return ( new Date().toLocaleString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: 'numeric',
+  second: 'numeric',
+  timeZone: 'Asia/dhaka' //GMT +6
+}))
+}
+
 let PQueue;
 let queue;
 
@@ -63,4 +75,4 @@ const msgTemplate = async (obj) => {
   });
 };
 
-module.exports = { msgTemplate };
+module.exports = { msgTemplate , getTime};

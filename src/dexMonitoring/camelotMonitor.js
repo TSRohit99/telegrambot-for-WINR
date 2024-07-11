@@ -1,5 +1,5 @@
 const { web3 } = require('../../layer2s/setChainARB');
-const { msgTemplate } = require("../msgSender");
+const { msgTemplate,getTime } = require("../msgSender");
 const { getTokenPriceInUSD } = require("../getTokenPriceInUSD");
 const { routerAddress, routerAbi } = require('../routerConfigs/camelotYakRouter');
 
@@ -64,11 +64,12 @@ const camelotMonitor = async () => {
         const latestBlock = BigInt(await web3.eth.getBlockNumber());
 
         if (latestBlock > lastCheckedBlock) {
-          console.log(`Checking blocks from ${lastCheckedBlock + BigInt(1)} to ${latestBlock}`);
+          console.log(`Camelot Monitor -> Checking blocks from ${lastCheckedBlock + BigInt(1)} to ${latestBlock} : ${getTime()}`);
           const events = await routerContract.getPastEvents('YakSwap', {
             fromBlock: (lastCheckedBlock + BigInt(1)).toString(),
             toBlock: latestBlock.toString()
           });
+          console.log(`Camelot Monitor -> Found ${events.length} events`);
 
           // Add events to queue instead of processing immediately
           events.forEach(event => {
