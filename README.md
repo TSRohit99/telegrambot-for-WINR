@@ -4,7 +4,9 @@
 A Telegram Bot that fetches latest Blocks from Arbitrum network and finds relevent events of 2 routers (Uniswap v3 Pool ($WINR) & camelot's YakSwapRouter) and finds buy txns and send the real-time alerts on Telegram group chats and individuals.
 
 # High-Level System Over-view
-![diagram-export-7-11-2024-1_33_50-PM](https://github.com/TSRohit99/telegrambot-for-WINR/assets/112565753/ecb84276-d124-4de9-aeb9-dc79d94d296c)
+![diagram-export-7-11-2024-2_00_52-PM](https://github.com/TSRohit99/telegrambot-for-WINR/assets/112565753/21d1723b-4eff-4307-8b3c-5534f6a26eb7)
+
+
 
 
 
