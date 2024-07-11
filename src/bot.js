@@ -57,4 +57,22 @@ const sendMessage = (text, options = {}) => {
   });
 };
 
+// Graceful shutdown function
+const gracefulShutdown = () => {
+  console.log('Shutting down gracefully...');
+  bot.stopPolling()
+    .then(() => {
+      console.log('Polling stopped');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('Error stopping polling:', error);
+      process.exit(1);
+    });
+};
+
+// Listen for termination signals
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
+
 module.exports = { bot, sendMessage };
