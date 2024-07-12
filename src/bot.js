@@ -1,41 +1,116 @@
 const TelegramBot = require("node-telegram-bot-api");
-// const fs = require("fs");
+const fs = require("fs");
 require("dotenv").config();
 
-let chatIds = [-1002162604540,-1001476355723,-4218457554,-1001381610969]; // not using any DB at the moment
-// const chatIdsPath = "./chat_ids.json";
+let chatIds = [];
+const chatIdsPath = "./chat_ids.json";
 
-// if (fs.existsSync(chatIdsPath)) {
-//   chatIds = JSON.parse(fs.readFileSync(chatIdsPath));
-// }
+if (fs.existsSync(chatIdsPath)) {
+  try {
+    chatIds = JSON.parse(fs.readFileSync(chatIdsPath));
+    console.log("Loaded chat IDs:", chatIds);
+  } catch (error) {
+    console.error("Error reading chat_ids.json:", error);
+  }
+}
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
+const saveChatIds = () => {
+  try {
+    fs.writeFileSync(chatIdsPath, JSON.stringify(chatIds));
+    console.log("Chat IDs saved to file:", chatIds);
+  } catch (error) {
+    console.error("Error writing to chat_ids.json:", error);
+  }
+};
+
+
+const checkBotInGroup = async (chatId) => {
+ 
+    const b = await bot.getMe()
+    console.log(`Checking bot in chat ${chatId}...`);
+    const chatMember = await bot.getChatMember(chatId, b.id);
+    if(chatMember.status==="kicked"){
+      console.log(`Bot is kicked from the chat  ${chatId}`)
+      return false
+    }
+    console.log(`Bot is in chat ${chatId}`);
+    return true;
+
+
+};
+
+const cleanupChatIds = async () => {
+  console.log("Starting cleanup process...");
+  const validChatIds = [];
+  for (const chatId of chatIds) {
+    if (await checkBotInGroup(chatId)) {
+      validChatIds.push(chatId);
+    } else {
+      console.log(`Removing chat ID ${chatId} from the list`);
+    }
+  }
+  if (validChatIds.length !== chatIds.length) {
+    console.log(`Old chat IDs: ${chatIds}`);
+    chatIds = validChatIds;
+    console.log(`New chat IDs: ${chatIds}`);
+    saveChatIds();
+    console.log(`Removed ${chatIds.length - validChatIds.length} invalid chat IDs`);
+  } else {
+    console.log("No changes to chat IDs");
+  }
+};
+
+// Run cleanup every 60 minutes
+setInterval(cleanupChatIds, 60 * 60* 1000);
+
 bot.on("message", (msg) => {
   const chatId = msg.chat.id;
+  console.log(`Received message from chat ${chatId}`);
 
   if (chatId < 0) {
-    // Check for group chat
-    // if (chatIds.length < 100) {
-    //   if (!chatIds.includes(chatId)) {
-    //     chatIds.push(chatId);
-    //     try {
-    //       fs.writeFileSync(chatIdsPath, JSON.stringify(chatIds));
-    //     } catch (error) {
-    //       console.error("Error writing to chat_ids.json:", error);
-    //     }
-    //   }
-    // } else {
+    if (chatIds.length < 100) {
+      if (!chatIds.includes(chatId)) {
+        chatIds.push(chatId);
+        saveChatIds();
+        console.log(`Added new chat ID: ${chatId}`);
+      }
+    } else {
       bot.sendMessage(
         chatId,
-        "Contact @rohit_sen to use this bot, in your group!"
+        "Max Group reached! Contact @rohit_sen to use this bot, in your group!"
       );
-
-    //}
+    }
   } else {
     bot.sendMessage(chatId, "Only available for groups for now!");
   }
 });
+
+
+
+// Listen for new messages and add group chats
+bot.on("message", (msg) => {
+  const chatId = msg.chat.id;
+
+  if (chatId < 0) { //Check for group chat
+    if (chatIds.length < 100) {
+      if (!chatIds.includes(chatId)) {
+        chatIds.push(chatId);
+        saveChatIds();
+      }
+    } else {
+      bot.sendMessage(
+        chatId,
+        "Max Group reached! Contact @rohit_sen to use this bot, in your group!"
+      );
+    }
+  } else {
+    bot.sendMessage(chatId, "Only available for groups for now!");
+  }
+});
+
+
 
 const sendMessage = (text, options = {}) => {
   chatIds.forEach((chatId) => {
@@ -49,31 +124,37 @@ const sendMessage = (text, options = {}) => {
         ...options,
       });
     } else {
+      try{
       bot.sendMessage(chatId, text, {
         parse_mode: "HTML",
         disable_web_page_preview: true,
         ...options,
       });
+    }catch(error){
+      console.log("group has been deleted!");
+      
+      
+    }
     }
   });
 };
 
 // Graceful shutdown function
-const gracefulShutdown = () => {
+const gracefulShutdown = async () => {
   console.log('Shutting down gracefully...');
-  bot.stopPolling()
-    .then(() => {
-      console.log('Polling stopped');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('Error stopping polling:', error);
-      process.exit(1);
-    });
+  try {
+    await bot.stopPolling();
+    console.log('Polling stopped');
+    process.exit(0);
+  } catch (error) {
+    console.error('Error stopping polling:', error);
+    process.exit(1);
+  }
 };
 
 // Listen for termination signals
-process.on('SIGINT', gracefulShutdown);
-process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', () => gracefulShutdown());
+process.on('SIGTERM', () => gracefulShutdown());
+cleanupChatIds();
 
 module.exports = { bot, sendMessage };
