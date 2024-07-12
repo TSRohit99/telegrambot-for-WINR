@@ -5,6 +5,7 @@ require("dotenv").config();
 let chatIds = [];
 const chatIdsPath = "./chat_ids.json";
 
+// Load chat IDs from file
 if (fs.existsSync(chatIdsPath)) {
   try {
     chatIds = JSON.parse(fs.readFileSync(chatIdsPath));
@@ -16,6 +17,7 @@ if (fs.existsSync(chatIdsPath)) {
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
+// Function to save chat IDs to file
 const saveChatIds = () => {
   try {
     fs.writeFileSync(chatIdsPath, JSON.stringify(chatIds));
@@ -25,22 +27,20 @@ const saveChatIds = () => {
   }
 };
 
-
+// Function to check if the bot is in a group
 const checkBotInGroup = async (chatId) => {
- 
-    const b = await bot.getMe()
-    console.log(`Checking bot in chat ${chatId}...`);
-    const chatMember = await bot.getChatMember(chatId, b.id);
-    if(chatMember.status==="kicked"){
-      console.log(`Bot is kicked from the chat  ${chatId}`)
-      return false
-    }
-    console.log(`Bot is in chat ${chatId}`);
-    return true;
-
-
+  const botInfo = await bot.getMe();
+  console.log(`Checking bot in chat ${chatId}...`);
+  const chatMember = await bot.getChatMember(chatId, botInfo.id);
+  if (chatMember.status === "kicked") {
+    console.log(`Bot is kicked from the chat ${chatId}`);
+    return false;
+  }
+  console.log(`Bot is in chat ${chatId}`);
+  return true;
 };
 
+// Function to clean up chat IDs
 const cleanupChatIds = async () => {
   console.log("Starting cleanup process...");
   const validChatIds = [];
@@ -63,13 +63,14 @@ const cleanupChatIds = async () => {
 };
 
 // Run cleanup every 60 minutes
-setInterval(cleanupChatIds, 60 * 60* 1000);
+setInterval(cleanupChatIds, 60 * 60 * 1000);
 
+// Listen for new messages and add group chats
 bot.on("message", (msg) => {
   const chatId = msg.chat.id;
   console.log(`Received message from chat ${chatId}`);
 
-  if (chatId < 0) {
+  if (chatId < 0) { // Check for group chat
     if (chatIds.length < 100) {
       if (!chatIds.includes(chatId)) {
         chatIds.push(chatId);
@@ -87,36 +88,12 @@ bot.on("message", (msg) => {
   }
 });
 
-
-
-// Listen for new messages and add group chats
-bot.on("message", (msg) => {
-  const chatId = msg.chat.id;
-
-  if (chatId < 0) { //Check for group chat
-    if (chatIds.length < 100) {
-      if (!chatIds.includes(chatId)) {
-        chatIds.push(chatId);
-        saveChatIds();
-      }
-    } else {
-      bot.sendMessage(
-        chatId,
-        "Max Group reached! Contact @rohit_sen to use this bot, in your group!"
-      );
-    }
-  } else {
-    bot.sendMessage(chatId, "Only available for groups for now!");
-  }
-});
-
-
-
+// Function to send messages to all groups
 const sendMessage = (text, options = {}) => {
   chatIds.forEach((chatId) => {
     if (chatId === -1001381610969) {
       // TG @WINRProtocol
-      const topicId = 91869; //Topic -> Price_Chat
+      const topicId = 91869; // Topic -> Price_Chat
       bot.sendMessage(chatId, text, {
         message_thread_id: topicId,
         parse_mode: "HTML",
@@ -124,17 +101,15 @@ const sendMessage = (text, options = {}) => {
         ...options,
       });
     } else {
-      try{
-      bot.sendMessage(chatId, text, {
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-        ...options,
-      });
-    }catch(error){
-      console.log("group has been deleted!");
-      
-      
-    }
+      try {
+        bot.sendMessage(chatId, text, {
+          parse_mode: "HTML",
+          disable_web_page_preview: true,
+          ...options,
+        });
+      } catch (error) {
+        console.log("Group has been deleted!");
+      }
     }
   });
 };
@@ -155,6 +130,8 @@ const gracefulShutdown = async () => {
 // Listen for termination signals
 process.on('SIGINT', () => gracefulShutdown());
 process.on('SIGTERM', () => gracefulShutdown());
+
+// Initial cleanup
 cleanupChatIds();
 
 module.exports = { bot, sendMessage };
