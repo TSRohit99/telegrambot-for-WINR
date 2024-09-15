@@ -2,46 +2,27 @@ const axios = require('axios');
 
 const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3/simple/price';
 const CACHE_TTL = 60000; // 1 minute cache
+const RATE_LIMIT_INTERVAL = 2400; // 25 requests per minute = 1 request per 2.4 seconds
+
 const cache = new Map();
-
-// Rate limiting configuration
-const MAX_REQUESTS_PER_MINUTE = 25;
-const MINUTE_IN_MS = 60000;
-const TOKEN_REFILL_INTERVAL = MINUTE_IN_MS / MAX_REQUESTS_PER_MINUTE;
-
-let tokenBucket = MAX_REQUESTS_PER_MINUTE;
-let lastRefillTimestamp = Date.now();
+let lastRequestTime = 0;
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-const refillTokenBucket = () => {
-  const now = Date.now();
-  const timeElapsed = now - lastRefillTimestamp;
-  const tokensToAdd = Math.floor(timeElapsed / TOKEN_REFILL_INTERVAL);
-  
-  if (tokensToAdd > 0) {
-    tokenBucket = Math.min(MAX_REQUESTS_PER_MINUTE, tokenBucket + tokensToAdd);
-    lastRefillTimestamp = now;
-  }
-};
-
-const waitForAvailableToken = async () => {
-  while (tokenBucket === 0) {
-    const timeToWait = TOKEN_REFILL_INTERVAL - (Date.now() - lastRefillTimestamp);
-    await sleep(Math.max(0, timeToWait));
-    refillTokenBucket();
-  }
-  tokenBucket--;
-};
-
 const getTokenPriceInUSD = async (tokenId) => {
-  // Check cache first
+  // Check cache
   const cachedData = cache.get(tokenId);
   if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL) {
     return cachedData.data;
   }
 
-  await waitForAvailableToken();
+  // Simple rate limiting
+  const now = Date.now();
+  const timeToWait = RATE_LIMIT_INTERVAL - (now - lastRequestTime);
+  if (timeToWait > 0) {
+    await sleep(timeToWait);
+  }
+  lastRequestTime = Date.now();
 
   try {
     const response = await axios.get(COINGECKO_API_URL, {
