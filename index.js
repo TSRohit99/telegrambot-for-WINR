@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+require("dotenv").config();
 
 const { setupBot } = require('./src/bot');
 const { camelotMonitor } = require('./src/dexMonitoring/camelotMonitor');
@@ -9,7 +10,8 @@ app.get('/', (req, res)=>{
   res.send("Bot is live");
 })
 
-const port = 3000;
+
+const port = process.env.PORT || 4000;
 
 app.listen(port, ()=>{
   console.log('server running');
