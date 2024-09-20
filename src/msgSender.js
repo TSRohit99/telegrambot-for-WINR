@@ -34,6 +34,7 @@ const msgTemplate = async (obj) => {
   }
 
   let message = `<b>WINR Buy (on ${obj.dex} V3)!💹🔥</b>\n\n`;
+  message += `<b>🟢</b> Price : $${obj.price.toFixed(4)} USD\n`;
   message += `<b>➡️</b> ${obj.amountOutWINR} WINR (${obj.amountInUSD.toFixed(2)} USD)\n`;
   message += `<b>👤 </b><a href="https://arbiscan.io/address/${obj.tx.from}">Owner</a>\n`;
   message += `<b>🔗 </b><a href="https://arbiscan.io/tx/${obj.event.transactionHash}">Txn Link</a>\n`;

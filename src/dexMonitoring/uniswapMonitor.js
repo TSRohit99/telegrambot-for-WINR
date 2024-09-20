@@ -29,6 +29,7 @@ const processEvent = async (event) => {
     if (isBuy && amountInUSD >= 500) { // Added minimum threshold
       const tx = await web3.eth.getTransaction(event.transactionHash);
       const obj = {
+        price: tokenPriceInUSD.price,
         dex: "UniSwap",
         amountOutWINR,
         amountInUSD,
