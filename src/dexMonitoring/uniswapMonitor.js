@@ -2,6 +2,7 @@ const { web3 } = require("../../layer2s/setChainARB");
 const { msgTemplate, getTime } = require("../msgSender");
 const { getTokenPriceInUSD } = require("../getTokenPriceInUSD");
 const { poolAddress, poolAbi } = require("../routerConfigs/uniSwapV3Pool");
+const { buyAmount } = require("../bot")
 
 const MAX_BLOCK_RANGE = 100;
 const CHECK_INTERVAL = 10000; // Increased to 10 seconds
@@ -26,7 +27,7 @@ const processEvent = async (event) => {
     const amountOutWINR = parseFloat(web3.utils.fromWei(tokenAmount.toString(), "ether")).toFixed(2);
     const amountInUSD = parseFloat(amountOutWINR) * tokenPriceInUSD.price;
 
-    if (isBuy && amountInUSD >= 500) { // Added minimum threshold
+    if (isBuy && amountInUSD >= buyAmount) { // Added minimum threshold
       const tx = await web3.eth.getTransaction(event.transactionHash);
       const obj = {
         price: tokenPriceInUSD.price,

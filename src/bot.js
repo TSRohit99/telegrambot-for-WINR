@@ -5,6 +5,8 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
 const chatIds = [-1002162604540,-1001476355723,-1001381610969]
 
+const buyAmount = 2000;
+
 bot.on("message", (msg) => {
   const chatId = msg.chat.id;
 
@@ -65,4 +67,4 @@ const gracefulShutdown = async () => {
 process.on('SIGINT', () => gracefulShutdown());
 process.on('SIGTERM', () => gracefulShutdown());
 
-module.exports = { bot, sendMessage };
+module.exports = { bot, sendMessage, buyAmount };

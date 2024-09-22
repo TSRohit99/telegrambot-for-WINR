@@ -1,6 +1,7 @@
 const { web3 } = require("../../layer2s/setChainARB");
 const { msgTemplate, getTime } = require("../msgSender");
 const { getTokenPriceInUSD } = require("../getTokenPriceInUSD");
+const { buyAmount } = require("../bot")
 const {
   routerAddress,
   routerAbi,
@@ -41,7 +42,7 @@ const processQueue = async () => {
       ).toFixed(2);
       const amountInUSD = parseFloat(amountOutWINR) * tokenPriceInUSD.price;
 
-      if (isBuy && amountInUSD >= 500) {
+      if (isBuy && amountInUSD >= buyAmount) {
         // Ensure amountInUSD meets minimum threshold
         const tx = await web3.eth.getTransaction(event.transactionHash);
 
