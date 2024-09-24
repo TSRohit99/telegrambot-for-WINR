@@ -3,7 +3,7 @@ require("dotenv").config();
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
-const chatIds = [-1002162604540,-1001476355723,-1001381610969]
+const chatIds = [-1002162604540,-1001381610969]
 
 const buyAmount = 2000;
 
